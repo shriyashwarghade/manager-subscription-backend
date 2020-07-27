@@ -19,6 +19,7 @@
 3. Install Required Packages
     
     pip install Django
+    
     pip install stripe
     
 4. Command To Run Project

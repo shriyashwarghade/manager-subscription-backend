@@ -4,10 +4,11 @@ from datetime import datetime
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.http import HttpResponse
+from django.views import View
 
 
-def products(request):
-    if request.method == "GET":
+class Products(View):
+    def get(self, request):
         if request.user.is_authenticated:
             from backend.stripe_operations import get_plans_list
             data = get_plans_list()
@@ -18,9 +19,22 @@ def products(request):
         else:
             return HttpResponse(json.dumps({'msg': "You Are Not Login To Portal."}), status=403)
 
+    def post(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Post."}), status=405)
 
-def create_user(request):
-    if request.method == "POST":
+    def put(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Put."}), status=405)
+
+    def delete(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Delete."}), status=405)
+
+
+class CreateUser(View):
+
+    def get(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Get."}), status=405)
+
+    def post(self, request):
         data = json.loads(request.body)
         from backend.models import Manager
         db_data = Manager.objects.filter(email=data.get("email_id"))
@@ -45,9 +59,18 @@ def create_user(request):
                                           password=data.get("password")).save()
             return HttpResponse(json.dumps({"msg": "Account Created Successfully"}), status=200)
 
+    def put(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Put."}), status=405)
 
-def login_request(request):
-    if request.method == "POST":
+    def delete(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Delete."}), status=405)
+
+
+class LoginRequest(View):
+    def get(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Get."}), status=405)
+
+    def post(self, request):
         data = json.loads(request.body)
         user = authenticate(username=data.get("email_id"), password=data.get("password"))
         if user is not None:
@@ -57,18 +80,33 @@ def login_request(request):
         else:
             return HttpResponse(json.dumps({'msg': "User Id Or Password Incorrect."}), status=403)
 
+    def put(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Put."}), status=405)
 
-def logout_request(request):
-    if request.method == "GET":
+    def delete(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Post."}), status=405)
+
+
+class LogoutRequest(View):
+    def get(self, request):
         if request.user.is_authenticated:
             logout(request)
             return HttpResponse(json.dumps({'msg': "User Logged Out."}), status=200)
         else:
             return HttpResponse(json.dumps({'msg': "User Already Logged Out."}), status=200)
 
+    def post(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Post."}), status=405)
 
-def user_info(request):
-    if request.method == 'GET':
+    def put(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Put."}), status=405)
+
+    def delete(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Delete."}), status=405)
+
+
+class UserInfo(View):
+    def get(self, request):
         if request.user.is_authenticated:
             from backend.models import Manager
             user = list(Manager.objects.filter(email=request.user.email))[0]
@@ -85,9 +123,18 @@ def user_info(request):
         else:
             return HttpResponse(json.dumps({'msg': "You Are Not Login To Portal."}), status=403)
 
+    def post(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Post."}), status=405)
 
-def subscription(request):
-    if request.method == 'GET':
+    def put(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Put."}), status=405)
+
+    def delete(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Delete."}), status=405)
+
+
+class Subscription(View):
+    def get(self, request):
         if request.user.is_authenticated:
             from backend.models import Manager, Subscription
             user = list(Manager.objects.filter(email=request.user.email))[0]
@@ -104,7 +151,8 @@ def subscription(request):
             return HttpResponse(json.dumps({'subscription': data_to_send}), status=200)
         else:
             return HttpResponse(json.dumps({'msg': "You Are Not Login To Portal."}), status=403)
-    elif request.method == 'POST':
+
+    def post(self, request):
         body = json.loads(request.body)
         if request.user.is_authenticated:
             from backend.models import Manager
@@ -135,15 +183,17 @@ def subscription(request):
             return HttpResponse(json.dumps({'msg': "Subscription Successfully Completed."}), status=200)
         else:
             return HttpResponse(json.dumps({'msg': "You Are Not Login To Portal."}), status=403)
-    elif request.method == 'DELETE':
+
+    def delete(self, request):
         if request.user.is_authenticated:
-            from backend.models import Manager,Subscription
+            from backend.models import Manager, Subscription
             user = list(Manager.objects.filter(email=request.user.email))[0]
             subscription = list(Subscription.objects.filter(id=user.sub_id))[0]
             from backend.stripe_operations import delete_subscription_in_stripe
             delted_subscription = delete_subscription_in_stripe(subscription.subscription_id)
-            if not delted_subscription[1]: return HttpResponse(json.dumps({"msg": "Error:{}".format(delted_subscription[0])}),
-                                                        status=412)
+            if not delted_subscription[1]: return HttpResponse(
+                json.dumps({"msg": "Error:{}".format(delted_subscription[0])}),
+                status=412)
             user.sub_id = ''
             user.product_id = ''
             user.save()
@@ -153,3 +203,6 @@ def subscription(request):
             return HttpResponse(json.dumps({'msg': "Subscription Deleted Successfully."}), status=200)
         else:
             return HttpResponse(json.dumps({'msg': "You Are Not Login To Portal."}), status=403)
+
+    def put(self, request):
+        return HttpResponse(json.dumps({'msg': "Invalid Method Put."}), status=405)
